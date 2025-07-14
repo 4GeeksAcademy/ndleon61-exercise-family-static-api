@@ -30,12 +30,12 @@ def sitemap():
 
 
 @app.route('/members', methods=['GET'])
-def handle_hello():
-    # This is how you can use the Family datastructure by calling its methods
-    members = jackson_family.get_all_members()
-    response_body = {"hello": "world",
-                     "family": members}
-    return jsonify(response_body), 200
+def get_all_members():
+      try:
+          members = jackson_family.get_all_members()
+          return jsonify(members), 200
+      except Exception as e:
+          return jsonify({"error": str(e)}), 500
 
 
 
@@ -43,3 +43,42 @@ def handle_hello():
 if __name__ == '__main__':
     PORT = int(os.environ.get('PORT', 3000))
     app.run(host='0.0.0.0', port=PORT, debug=True)
+
+
+@app.route('/members/<int:id>', methods = ['GET'])
+def get_member(id):
+    try:
+        member = jackson_family.get_member(id)
+        if member:
+            return jsonify(member), 200
+        else:
+            return jsonify({"error": "Member not found"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+    
+@app.route('/members', methods=['POST'])
+def add_member():
+    try:
+        data = request.get_json()
+
+        if not all(k in data for k in ("first_name", "age", "lucky_numbers")):
+            return jsonify({"error": "Missing required fields"}), 400
+
+        jackson_family.add_member(data)
+        return jsonify(data), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+    
+@app.route('/members/<int:id>', methods=['DELETE'])
+def delete_member(id):
+    try:
+        was_deleted = jackson_family.delete_member(id)
+        if was_deleted:
+            return jsonify({"done": True}), 200
+        else:
+            return jsonify({"error": "Member not found"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
